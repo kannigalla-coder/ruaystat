@@ -1,0 +1,15 @@
+{
+  "name": "ruaystat",
+  "private": true,
+  "description": "รวยสถิติ — Thai lottery statistics web app",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i css/tailwind.src.css -o css/app.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.js -i css/tailwind.src.css -o css/app.css --watch",
+    "fetch": "node scripts/fetch-draws.mjs",
+    "backfill": "node scripts/fetch-draws.mjs --backfill",
+    "serve": "npx --yes serve -l 5173 ."
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

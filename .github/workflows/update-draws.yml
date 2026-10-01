@@ -1,0 +1,59 @@
+# Pulls new lottery results from glo.or.th, commits them to data/, then redeploys the site.
+name: Update lottery results
+
+on:
+  schedule:
+    # Draws are announced around 16:00 Thai time (09:00 UTC). Try every 30 min from 16:00 to 20:30
+    # on the usual draw days plus the days draws get moved to (2, 3, 17, 30).
+    - cron: "*/30 9-13 1,2,3,16,17,30 * *"
+  workflow_dispatch:          # "Run workflow" button in the Actions tab
+    inputs:
+      backfill:
+        description: "Scan every month since 2016 (only needed if data/ is empty)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update-draws
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch results
+        run: node scripts/fetch-draws.mjs ${{ inputs.backfill && '--backfill' || '' }}
+
+      - name: Commit if changed
+        id: commit
+        run: |
+          if [ -z "$(git status --porcelain data)" ]; then
+            echo "No new results."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git commit -m "Update lottery results $(date -u +%Y-%m-%d)"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    uses: ./.github/workflows/deploy.yml

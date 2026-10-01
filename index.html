@@ -1,0 +1,93 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>รวยสถิติ</title>
+<!--
+  รวยสถิติ (RuayStat) — app shell only. Each feature lives in its own file:
+    css/style.css            theme colors + styles shared by every tab
+    css/app.css              generated Tailwind CSS (npm run build:css) — do not edit
+    data/                    real results from glo.or.th (scripts/fetch-draws.mjs, run by GitHub Actions)
+    js/core/*.js             data + logic (no screen code)
+    js/ui/components.js      shared UI pieces
+    js/tabs/<tab>.js         one file per tab: its markup and behaviour
+    js/app.js                mounts the tabs, tab switching, countdown
+  See README.md for what to check in each file.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+<script src="js/ui/theme.js"></script>
+<link rel="stylesheet" href="css/app.css">   <!-- built by Tailwind: npm run build:css -->
+<link rel="stylesheet" href="css/style.css">
+
+<!-- ===== Header ===== -->
+<header class="fixed top-0 inset-x-0 z-50 bg-surface-dim/85 backdrop-blur-xl shadow-[0_4px_24px_var(--bar-shadow)]" style="padding-top: env(safe-area-inset-top, 0px)">
+  <div class="max-w-md mx-auto h-16 px-4 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <div class="w-9 h-9 rounded-xl bg-primary-container/15 text-primary-container flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined fill text-[22px]">query_stats</span>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <div class="flex items-baseline gap-1">
+          <span class="text-[17px] font-bold text-primary truncate">รวยสถิติ</span>
+          <span class="num text-[10px] tracking-wider text-on-surface-variant opacity-80">RuayStat</span>
+        </div>
+        <span class="text-[11px] text-on-surface-variant truncate">สถิติสลากตามงวด วันที่ 1 และ 16</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 flex-shrink-0">
+      <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-container text-on-primary-container shadow-md">
+        <span class="material-symbols-outlined text-[14px]">timer</span>
+        <span class="text-[11px] font-bold" id="hdrCountdownText"></span>
+      </div>
+      <!-- Theme picker (js/ui/theme.js) -->
+      <div class="relative">
+        <button type="button" id="themeBtn" aria-haspopup="menu" aria-expanded="false" aria-label="เลือกธีม"
+          class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:text-primary hover:bg-surface-container-high transition-colors">
+          <span class="material-symbols-outlined text-[22px]">brightness_auto</span>
+        </button>
+        <div id="themeMenu" role="menu" aria-label="ธีม" hidden
+          class="absolute right-0 top-12 w-56 p-1.5 rounded-xl bg-surface-container shadow-[0_12px_32px_var(--bar-shadow)] ring-1 ring-on-surface/10 flex flex-col gap-0.5"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Tabs (content filled by js/tabs/*.js) ===== -->
+<main class="max-w-md mx-auto px-4 pt-20 pb-28">
+  <section id="tab-generate" class="flex flex-col gap-5"><p class="text-[13px] text-on-surface-variant py-10 text-center">กำลังโหลดผลรางวัล...</p></section>
+  <section id="tab-stats" class="flex flex-col gap-5" hidden></section>
+  <section id="tab-saved" class="flex flex-col gap-4" hidden></section>
+  <section id="tab-check" class="flex flex-col gap-5" hidden></section>
+
+  <p class="mt-6 text-[11px] leading-relaxed text-on-surface-variant/80">
+    <span id="sourceNote"></span>
+    การออกรางวัลแต่ละงวดเป็นการสุ่มอิสระ เลขท้าย 2 ตัวทุกเลขมีโอกาสออก 1 ใน 100 เท่ากัน สถิติย้อนหลังไม่ได้เพิ่มโอกาสถูกรางวัล
+  </p>
+</main>
+
+<!-- ===== Bottom navigation ===== -->
+<nav class="fixed bottom-0 inset-x-0 z-50 bg-surface-dim/90 backdrop-blur-xl shadow-[0_-8px_32px_var(--bar-shadow)]" style="padding-bottom: env(safe-area-inset-bottom, 0px)">
+  <div class="max-w-md mx-auto flex items-center justify-around h-16 px-1">
+    <a href="#generate" data-nav="generate" class="relative flex flex-col items-center justify-center w-20 h-full gap-0.5"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="text-[10px] font-semibold">สุ่มเลข</span></a>
+    <a href="#stats" data-nav="stats" class="relative flex flex-col items-center justify-center w-20 h-full gap-0.5"><span class="material-symbols-outlined text-[22px]">analytics</span><span class="text-[10px] font-semibold">สถิติ</span></a>
+    <a href="#saved" data-nav="saved" class="relative flex flex-col items-center justify-center w-20 h-full gap-0.5"><span class="material-symbols-outlined text-[22px]">bookmark</span><span class="text-[10px] font-semibold">เลขที่บันทึก</span><span id="savedBadge" class="absolute top-2 right-4 min-w-[16px] h-4 px-1 rounded-full bg-primary-container text-on-primary-fixed text-[9px] font-bold flex items-center justify-center" hidden></span></a>
+    <a href="#check" data-nav="check" class="relative flex flex-col items-center justify-center w-20 h-full gap-0.5"><span class="material-symbols-outlined text-[22px]">confirmation_number</span><span class="text-[10px] font-semibold">ตรวจรางวัล</span></a>
+  </div>
+</nav>
+
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] px-4 py-2.5 rounded-full bg-surface-bright text-on-surface text-[13px] shadow-xl transition-opacity duration-200 opacity-0 pointer-events-none" style="bottom: calc(5rem + env(safe-area-inset-bottom, 0px))" role="status" aria-live="polite"></div>
+
+<!-- Load order matters: core -> ui -> tabs -> app -->
+<script src="js/core/base.js"></script>
+<script src="js/core/calendar.js"></script>
+<script src="js/core/draws.js"></script>
+<script src="js/core/prize.js"></script>
+<script src="js/core/stats.js"></script>
+<script src="js/core/saved.js"></script>
+<script src="js/ui/components.js"></script>
+<script src="js/tabs/generate.js"></script>
+<script src="js/tabs/stats.js"></script>
+<script src="js/tabs/saved.js"></script>
+<script src="js/tabs/check.js"></script>
+<script src="js/app.js"></script>

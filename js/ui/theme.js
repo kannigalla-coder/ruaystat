@@ -1,14 +1,16 @@
 // Theme picker: อัตโนมัติ / สว่าง / มืด. Loaded in the page head so the saved theme applies before first paint.
 // Sets data-app-theme on <html> ("light" | "dark"); "auto" removes it and follows the device. Colors live in css/style.css.
+// Default is light: on phones in dark mode the dark theme looked too dark, so the device setting applies only if the user picks "อัตโนมัติ".
 (function () {
   'use strict';
   const KEY = 'ruaystat.theme';
   const OPTIONS = [
     { val: 'auto', label: 'อัตโนมัติ', hint: 'ตามการตั้งค่าเครื่อง', icon: 'brightness_auto' },
-    { val: 'light', label: 'โหมดสว่าง', hint: 'พื้นหลังสีอ่อน', icon: 'light_mode' },
+    { val: 'light', label: 'โหมดสว่าง', hint: 'พื้นหลังสีอ่อน (ค่าเริ่มต้น)', icon: 'light_mode' },
     { val: 'dark', label: 'โหมดมืด', hint: 'พื้นหลังสีเข้ม', icon: 'dark_mode' }
   ];
-  const read = () => { try { return localStorage.getItem(KEY) || 'auto'; } catch (e) { return 'auto'; } };
+  const DEFAULT = 'light';
+  const read = () => { try { return localStorage.getItem(KEY) || DEFAULT; } catch (e) { return DEFAULT; } };
   const write = v => { try { localStorage.setItem(KEY, v); } catch (e) {} };
 
   function apply(v) {
